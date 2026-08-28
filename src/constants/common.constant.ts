@@ -1,0 +1,4 @@
+export const DAYS_7 = 60 * 60 * 24 * 7;
+
+export const EXPIRATION_FORGOT_PASSWORD_TOKEN_MIN = 15;
+export const EXPIRATION_EMAIL_VERIFICATION_TOKEN_MIN = 15;
