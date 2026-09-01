@@ -6,6 +6,7 @@ import { UserModule } from './api/user/user.module';
 import { AuthModule } from './api/auth/auth.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CleanupModule } from './modules/cleanup/cleanup.module';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { CleanupModule } from './modules/cleanup/cleanup.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot(),
     PrismaModule,
     AuthModule,
     UserModule,

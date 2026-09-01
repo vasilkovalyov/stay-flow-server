@@ -12,30 +12,35 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UserService } from '../user/user.service';
 import { PasswordService } from './password.service';
 import { JwtService } from '@nestjs/jwt';
-import type { StringValue } from 'ms';
 import { EXCEPTION_MESSAGES } from './constants/exception-messages.constant';
 import { ConfigService } from '@nestjs/config';
 import {
-  DAYS_7,
   EXPIRATION_EMAIL_VERIFICATION_TOKEN_MIN,
   EXPIRATION_FORGOT_PASSWORD_TOKEN_MIN,
 } from '@/constants/common.constant';
-import type { Response, Request } from 'express';
+import type { Response, Request, CookieOptions } from 'express';
 import { isDevEnv } from '@/utils/is-dev-env.utils';
 import { JwtPayload } from './interfaces/jwt.interface';
 import { randomBytes, createHash, randomInt } from 'crypto';
-import { PrismaService } from '@/modules/prisma/prisma.service';
 import { RESPONSE_MESSAGES } from './constants/response-messages.constant';
 import {
-  getDateExpirationDays,
   getDateExpirationMinutes,
+  getDaysMs,
+  getMinutesMs,
   isExpiredDate,
 } from '@/utils/dates.utils';
-import { HASH_TOKEN_ALGORITHM } from '@/constants/auth.constant';
+import {
+  ACCESS_TOKEN_COOKIE_NAME,
+  HASH_TOKEN_ALGORITHM,
+  JWT_ACCESS_TOKEN_COOKIE_TTL,
+  JWT_REFRESH_TOKEN_COOKIE_TTL,
+  JWT_REFRESH_TOKEN_TTL,
+  REFRESH_TOKEN_COOKIE_NAME,
+} from '@/constants/auth.constant';
+import { PrismaService } from '@/modules/prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
-  private readonly JWT_REFRESH_TOKEN_TTL: string;
   private readonly JWT_REFRESH_SECRET: string;
   private readonly COOKIE_DOMAIN: string;
   private readonly FRONTEND_URL: string;
@@ -47,24 +52,30 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly prismaService: PrismaService,
   ) {
-    this.JWT_REFRESH_TOKEN_TTL = configService.getOrThrow<string>(
-      'JWT_REFRESH_TOKEN_TTL',
-    );
     this.JWT_REFRESH_SECRET =
       configService.getOrThrow<string>('JWT_REFRESH_SECRET');
     this.COOKIE_DOMAIN = configService.getOrThrow<string>('COOKIE_DOMAIN');
     this.FRONTEND_URL = configService.getOrThrow<string>('FRONTEND_URL');
   }
 
-  private setCookie(res: Response, token: string) {
+  private setCookie(res: Response, token: string, refreshToken: string) {
     const isDev = isDevEnv(this.configService);
 
-    res.cookie('refreshToken', token, {
+    const cookieSettings: CookieOptions = {
       httpOnly: true,
-      expires: getDateExpirationDays(DAYS_7),
       domain: this.COOKIE_DOMAIN,
-      secure: !isDev,
+      secure: true,
       sameSite: isDev ? 'none' : 'lax',
+    };
+
+    res.cookie(ACCESS_TOKEN_COOKIE_NAME, token, {
+      ...cookieSettings,
+      maxAge: getMinutesMs(JWT_ACCESS_TOKEN_COOKIE_TTL),
+    });
+
+    res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
+      ...cookieSettings,
+      maxAge: getDaysMs(JWT_REFRESH_TOKEN_COOKIE_TTL),
     });
   }
 
@@ -77,7 +88,7 @@ export class AuthService {
       this.jwtService.signAsync(payload),
       this.jwtService.signAsync(payload, {
         secret: this.JWT_REFRESH_SECRET,
-        expiresIn: this.JWT_REFRESH_TOKEN_TTL as StringValue,
+        expiresIn: JWT_REFRESH_TOKEN_TTL,
       }),
     ]);
 
@@ -120,7 +131,7 @@ export class AuthService {
     const { id } = user;
     const { accessToken, refreshToken } = await this.generateTokens(id);
 
-    this.setCookie(res, refreshToken);
+    this.setCookie(res, accessToken, refreshToken);
 
     return {
       id,
@@ -181,6 +192,8 @@ export class AuthService {
     ]);
 
     // TODO: send email
+    const resetUrl = `${this.FRONTEND_URL}/reset-password?token=${token}`;
+    console.log('resetUrl', resetUrl);
 
     return {
       message: RESPONSE_MESSAGES.forgotPasswordResetLink,
@@ -286,6 +299,7 @@ export class AuthService {
     ]);
 
     // TODO: send code email
+    console.log('code', code);
 
     return {
       message: RESPONSE_MESSAGES.verificationCode,
@@ -372,11 +386,26 @@ export class AuthService {
     const { id } = user;
     const tokens = await this.generateTokens(id);
 
-    this.setCookie(res, tokens.refreshToken);
+    this.setCookie(res, tokens.accessToken, tokens.refreshToken);
 
     return {
       id,
       accessToken: tokens.accessToken,
     };
+  }
+
+  logout(res: Response) {
+    const cookieOptions: CookieOptions = {
+      httpOnly: true,
+      domain: this.COOKIE_DOMAIN,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+    };
+
+    res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, cookieOptions);
+    res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, cookieOptions);
+
+    return true;
   }
 }
