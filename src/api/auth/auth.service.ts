@@ -128,6 +128,10 @@ export class AuthService {
       throw new ConflictException(EXCEPTION_MESSAGES.invalidCreds);
     }
 
+    if (user.emailVerifiedAt === null) {
+      throw new ConflictException(EXCEPTION_MESSAGES.emailNotVerified);
+    }
+
     const { id } = user;
     const { accessToken, refreshToken } = await this.generateTokens(id);
 
@@ -153,6 +157,8 @@ export class AuthService {
       ...dto,
       password: hashedPassword,
     });
+
+    await this.verificationCodeEmail(email);
 
     return {
       message: RESPONSE_MESSAGES.userCreateSuccessul,
@@ -211,6 +217,7 @@ export class AuthService {
     }
 
     const hashCode = this.getHashToken(dto.code);
+
     const userId = user.id;
 
     const verificationCode =
@@ -280,6 +287,7 @@ export class AuthService {
     const expiresAt = getDateExpirationMinutes(
       EXPIRATION_EMAIL_VERIFICATION_TOKEN_MIN,
     );
+
     const userId = user.id;
 
     await this.prismaService.$transaction([
@@ -303,6 +311,7 @@ export class AuthService {
 
     return {
       message: RESPONSE_MESSAGES.verificationCode,
+      email: user.email,
     };
   }
 

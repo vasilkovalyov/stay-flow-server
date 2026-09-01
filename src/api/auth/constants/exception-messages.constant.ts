@@ -7,4 +7,5 @@ export const EXCEPTION_MESSAGES = {
   expiredVerificationCode: 'Verification code has expired',
   invalidExpiredResetToken: 'Invalid or expired reset token',
   passwordDoNotMatch: 'Passwords do not match',
+  emailNotVerified: 'Email is not verified',
 } as const;
