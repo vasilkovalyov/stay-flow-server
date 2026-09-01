@@ -2,6 +2,9 @@
 model UserProfile {
   id                Int           @id @default(autoincrement())
 
+  firstName         String        @map("first_name")
+  lastName          String        @map("last_name")
+
   avatarUrl         String?       @map("avatar_url")
   phone             String?       @unique
   birthDate         DateTime?     @map("birth_date")

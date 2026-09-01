@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Delete } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AuthGuard } from '@/modules/security/guards/auth.guard';
@@ -18,5 +18,11 @@ export class UserController {
   @UseGuards(AuthGuard)
   me(@CurrentAuthUser() user: JwtPayload) {
     return this.userService.me(user.id);
+  }
+
+  @Delete()
+  @UseGuards(AuthGuard)
+  deleteMe(@CurrentAuthUser() user: JwtPayload) {
+    return this.userService.delete(user.id);
   }
 }

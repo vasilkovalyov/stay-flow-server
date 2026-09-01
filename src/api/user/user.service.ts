@@ -14,6 +14,24 @@ export class UserService {
     });
   }
 
+  async delete(id: number): Promise<User> {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!user) {
+      throw new ConflictException(EXCEPTION_MESSAGES.userNotFound);
+    }
+
+    return await this.prismaService.user.delete({
+      where: {
+        id,
+      },
+    });
+  }
+
   async me(id: number): Promise<User | null> {
     const user = await this.prismaService.user.findUnique({
       where: {

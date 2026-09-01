@@ -6,9 +6,10 @@ import { PasswordService } from './password.service';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { SecurityModule } from '@/modules/security/security.module';
+import { UserProfileModule } from '@/modules/user-profile/user-profile.module';
 
 @Module({
-  imports: [UserModule, SecurityModule],
+  imports: [UserModule, SecurityModule, UserProfileModule],
   controllers: [AuthController],
   providers: [
     AuthService,

@@ -38,6 +38,7 @@ import {
   REFRESH_TOKEN_COOKIE_NAME,
 } from '@/constants/auth.constant';
 import { PrismaService } from '@/modules/prisma/prisma.service';
+import { UserProfileService } from '@/modules/user-profile/user-profile.service';
 
 @Injectable()
 export class AuthService {
@@ -51,6 +52,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly prismaService: PrismaService,
+    private readonly userProfileService: UserProfileService,
   ) {
     this.JWT_REFRESH_SECRET =
       configService.getOrThrow<string>('JWT_REFRESH_SECRET');
@@ -144,7 +146,7 @@ export class AuthService {
   }
 
   async signUp(dto: RegistrationDto) {
-    const { email, password } = dto;
+    const { email, password, firstName, lastName } = dto;
     const user = await this.userService.findByEmail(email);
 
     if (user) {
@@ -153,9 +155,14 @@ export class AuthService {
 
     const hashedPassword = await this.passwordService.hash(password);
 
-    await this.userService.create({
-      ...dto,
+    const createdUser = await this.userService.create({
+      email,
       password: hashedPassword,
+    });
+
+    await this.userProfileService.createUserProfile(createdUser.id, {
+      firstName: firstName,
+      lastName: lastName,
     });
 
     await this.verificationCodeEmail(email);
