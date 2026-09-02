@@ -13,8 +13,8 @@ export class UserProfileService {
     });
   }
 
-  createUserProfile(userId: number, dto: CreateUserProfileDto) {
-    return this.prismaService.userProfile.create({
+  async createUserProfile(userId: number, dto: CreateUserProfileDto) {
+    await this.prismaService.userProfile.create({
       data: {
         userId: userId,
         firstName: dto.firstName,

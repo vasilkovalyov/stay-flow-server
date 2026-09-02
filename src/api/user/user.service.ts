@@ -1,20 +1,29 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { User } from '@generated/prisma/client';
 import { PrismaService } from '@/modules/prisma/prisma.service';
 import { EXCEPTION_MESSAGES } from './constants/exception-messages.constant';
+import { UserMeDtoResponse } from './dto/response.dto';
+import { UserGetPayload, UserSelect } from '@generated/prisma/models';
+
+type UserResponseProps<T extends UserSelect> = Promise<UserGetPayload<{
+  select: T;
+}> | null>;
 
 @Injectable()
 export class UserService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    return await this.prismaService.user.create({
+  async create<S extends UserSelect>(
+    createUserDto: CreateUserDto,
+    options: S,
+  ): UserResponseProps<S> {
+    return this.prismaService.user.create({
       data: createUserDto,
+      select: options,
     });
   }
 
-  async delete(id: number): Promise<User> {
+  async delete(id: number): Promise<boolean> {
     const user = await this.prismaService.user.findUnique({
       where: {
         id,
@@ -25,17 +34,25 @@ export class UserService {
       throw new ConflictException(EXCEPTION_MESSAGES.userNotFound);
     }
 
-    return await this.prismaService.user.delete({
+    await this.prismaService.user.delete({
       where: {
         id,
       },
     });
+
+    return true;
   }
 
-  async me(id: number): Promise<User | null> {
+  async me(id: number): Promise<UserMeDtoResponse> {
     const user = await this.prismaService.user.findUnique({
       where: {
         id,
+      },
+    });
+
+    const userProfile = await this.prismaService.userProfile.findUnique({
+      where: {
+        userId: id,
       },
     });
 
@@ -43,22 +60,62 @@ export class UserService {
       throw new ConflictException(EXCEPTION_MESSAGES.userNotFound);
     }
 
-    return user;
+    if (!userProfile) {
+      throw new ConflictException(EXCEPTION_MESSAGES.userNotFound);
+    }
+
+    const { id: userId, email, createdAt } = user;
+    const {
+      firstName,
+      lastName,
+      avatarUrl,
+      phone,
+      birthDate,
+      bio,
+      country,
+      city,
+      language,
+      locale,
+      timezone,
+      phoneVerifiedAt,
+      updatedAt,
+    } = userProfile;
+
+    return {
+      id: userId,
+      email,
+      createdAt,
+      firstName,
+      lastName,
+      avatarUrl,
+      phone,
+      birthDate,
+      bio,
+      country,
+      city,
+      language,
+      locale,
+      timezone,
+      phoneVerifiedAt,
+      updatedAt,
+    };
   }
 
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail<S extends UserSelect>(
+    email: string,
+    options: S,
+  ): UserResponseProps<S> {
     return this.prismaService.user.findUnique({
-      where: {
-        email,
-      },
+      where: { email },
+      select: options,
     });
   }
 
-  async getUserById(
+  async getUserById<S extends UserSelect>(
     id: number,
-    options?: Partial<Record<keyof User, boolean>>,
-  ): Promise<User | null> {
-    return await this.prismaService.user.findUnique({
+    options: S,
+  ): UserResponseProps<S> {
+    return this.prismaService.user.findUnique({
       where: { id },
       select: options,
     });

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -115,7 +116,11 @@ export class AuthService {
 
   async signIn(res: Response, dto: LoginDto) {
     const { email, password } = dto;
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findByEmail(email, {
+      id: true,
+      password: true,
+      emailVerifiedAt: true,
+    });
 
     if (!user) {
       throw new ConflictException(EXCEPTION_MESSAGES.invalidCreds);
@@ -131,7 +136,7 @@ export class AuthService {
     }
 
     if (user.emailVerifiedAt === null) {
-      throw new ConflictException(EXCEPTION_MESSAGES.emailNotVerified);
+      throw new ForbiddenException(EXCEPTION_MESSAGES.emailNotVerified);
     }
 
     const { id } = user;
@@ -147,7 +152,7 @@ export class AuthService {
 
   async signUp(dto: RegistrationDto) {
     const { email, password, firstName, lastName } = dto;
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findByEmail(email, { id: true });
 
     if (user) {
       throw new ConflictException(EXCEPTION_MESSAGES.userExist);
@@ -155,10 +160,19 @@ export class AuthService {
 
     const hashedPassword = await this.passwordService.hash(password);
 
-    const createdUser = await this.userService.create({
-      email,
-      password: hashedPassword,
-    });
+    const createdUser = await this.userService.create(
+      {
+        email,
+        password: hashedPassword,
+      },
+      {
+        id: true,
+      },
+    );
+
+    if (!createdUser) {
+      throw new ConflictException(EXCEPTION_MESSAGES.errorCreateUser);
+    }
 
     await this.userProfileService.createUserProfile(createdUser.id, {
       firstName: firstName,
@@ -173,7 +187,9 @@ export class AuthService {
   }
 
   async forgotPassword(email: string) {
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findByEmail(email, {
+      id: true,
+    });
 
     if (!user) {
       return {
@@ -214,7 +230,9 @@ export class AuthService {
   }
 
   async verifyEmail(dto: VerifyEmailDto) {
-    const user = await this.userService.findByEmail(dto.email);
+    const user = await this.userService.findByEmail(dto.email, {
+      id: true,
+    });
 
     if (!user) {
       return {
@@ -231,6 +249,11 @@ export class AuthService {
       await this.prismaService.emailVerificationCode.findUnique({
         where: {
           userId: userId,
+        },
+        select: {
+          id: true,
+          expiresAt: true,
+          codeHash: true,
         },
       });
 
@@ -275,7 +298,11 @@ export class AuthService {
   }
 
   async verificationCodeEmail(email: string) {
-    const user = await this.userService.findByEmail(email);
+    const user = await this.userService.findByEmail(email, {
+      id: true,
+      email: true,
+      emailVerifiedAt: true,
+    });
 
     if (!user) {
       return {
@@ -330,6 +357,11 @@ export class AuthService {
     const resetToken = await this.prismaService.passwordResetToken.findUnique({
       where: {
         tokenHash,
+      },
+      select: {
+        id: true,
+        expiresAt: true,
+        userId: true,
       },
     });
 
