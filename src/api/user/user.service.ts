@@ -2,8 +2,9 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { PrismaService } from '@/modules/prisma/prisma.service';
 import { EXCEPTION_MESSAGES } from './constants/exception-messages.constant';
-import { UserMeDtoResponse } from './dto/response.dto';
 import { UserGetPayload, UserSelect } from '@generated/prisma/models';
+import { UpdateUserProfileDto } from '@/modules/user-profile/dto/update-user-profile.dto';
+import { UserProfileService } from '@/modules/user-profile/user-profile.service';
 
 type UserResponseProps<T extends UserSelect> = Promise<UserGetPayload<{
   select: T;
@@ -11,7 +12,10 @@ type UserResponseProps<T extends UserSelect> = Promise<UserGetPayload<{
 
 @Injectable()
 export class UserService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly userProfileService: UserProfileService,
+  ) {}
 
   async create<S extends UserSelect>(
     createUserDto: CreateUserDto,
@@ -43,7 +47,7 @@ export class UserService {
     return true;
   }
 
-  async me(id: number): Promise<UserMeDtoResponse> {
+  async me(id: number) {
     const user = await this.prismaService.user.findUnique({
       where: {
         id,
@@ -70,15 +74,14 @@ export class UserService {
       lastName,
       avatarUrl,
       phone,
+      phoneCode,
       birthDate,
       bio,
-      country,
-      city,
-      language,
-      locale,
-      timezone,
       phoneVerifiedAt,
       updatedAt,
+      countryId,
+      stateId,
+      cityId,
     } = userProfile;
 
     return {
@@ -89,15 +92,15 @@ export class UserService {
       lastName,
       avatarUrl,
       phone,
+      phoneCode,
       birthDate,
       bio,
-      country,
-      city,
-      language,
-      locale,
-      timezone,
       phoneVerifiedAt,
       updatedAt,
+      activeMode: user.activeMode,
+      countryId,
+      stateId,
+      cityId,
     };
   }
 
@@ -119,5 +122,9 @@ export class UserService {
       where: { id },
       select: options,
     });
+  }
+
+  update(userId: number, dto: UpdateUserProfileDto) {
+    return this.userProfileService.updateUserProfile(userId, dto);
   }
 }

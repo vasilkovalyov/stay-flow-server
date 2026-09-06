@@ -1,9 +1,11 @@
 import {
   IsDateString,
+  IsInt,
   IsOptional,
   IsString,
   IsUrl,
   Length,
+  Matches,
   MaxLength,
 } from 'class-validator';
 
@@ -24,7 +26,13 @@ export class UpdateUserProfileDto {
 
   @IsOptional()
   @IsString()
-  @Length(5, 20)
+  @Length(2, 4)
+  @Matches(/^\+\d{1,3}$/)
+  phoneCode?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(4, 20)
   phone?: string;
 
   @IsOptional()
@@ -37,27 +45,14 @@ export class UpdateUserProfileDto {
   bio?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  country?: string;
+  @IsInt()
+  countryId?: number;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  city?: string;
+  @IsInt()
+  stateId?: number;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  language?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  locale?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  timezone?: string;
+  @IsInt()
+  cityId?: number;
 }

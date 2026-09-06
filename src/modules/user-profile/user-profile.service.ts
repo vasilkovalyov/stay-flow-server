@@ -24,9 +24,42 @@ export class UserProfileService {
   }
 
   updateUserProfile(userId: number, dto: UpdateUserProfileDto) {
+    const {
+      firstName,
+      lastName,
+      phone,
+      phoneCode,
+      birthDate,
+      bio,
+      countryId,
+      stateId,
+      cityId,
+    } = dto;
+
     return this.prismaService.userProfile.update({
       where: { id: userId },
-      data: dto,
+      data: {
+        firstName,
+        lastName,
+        phone,
+        phoneCode,
+        birthDate,
+        bio,
+        countryId,
+        stateId,
+        cityId,
+      },
+      select: {
+        firstName: true,
+        lastName: true,
+        phone: true,
+        phoneCode: true,
+        birthDate: true,
+        bio: true,
+        countryId: true,
+        stateId: true,
+        cityId: true,
+      },
     });
   }
 }

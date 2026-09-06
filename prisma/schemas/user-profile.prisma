@@ -7,22 +7,28 @@ model UserProfile {
 
   avatarUrl         String?       @map("avatar_url")
   phone             String?       @unique
+  phoneCode         String?       @map("phone_code")
   birthDate         DateTime?     @map("birth_date")
   bio               String?
 
-  country           String?
-  city              String?
   language          String?
   locale            String?
-  timezone          String?
 
   phoneVerifiedAt   DateTime?     @map("phone_verified_at")
   
   createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt         DateTime      @updatedAt      @map("updated_at")
 
+  countryId         Int?          @map("country_id")
+  stateId           Int?          @map("state_id")
+  cityId            Int?          @map("city_id")
+
   userId            Int           @unique         @map("user_id")
   user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  country           Country?      @relation(fields: [countryId], references: [id])
+  state             CountryState? @relation(fields: [stateId], references: [id])
+  city              City?         @relation(fields: [cityId], references: [id])
 
   @@map("user_profiles")
 }
