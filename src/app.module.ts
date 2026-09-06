@@ -7,6 +7,7 @@ import { AuthModule } from './api/auth/auth.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CleanupModule } from './modules/cleanup/cleanup.module';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { LocationModule } from './api/location/location.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
     PrismaModule,
     AuthModule,
     UserModule,
+    LocationModule,
   ],
 })
 export class AppModule {}

@@ -1,0 +1,22 @@
+model Country {
+  id                      Int           @id @default(autoincrement())
+
+  name                    String        
+  code                    String        
+  phonecode               String        
+  currency                String        
+  currencyName            String         @map("currency_name")
+  currencySymbol          String         @map("currency_symbol")
+
+  latitude                Decimal       
+  longitude               Decimal       
+
+  emoji                   String?       
+  
+  states                  CountryState[]
+  cities                  City[]
+
+  profiles                UserProfile[]
+
+  @@map("countries")
+}

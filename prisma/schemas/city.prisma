@@ -1,0 +1,22 @@
+model City {
+  id                      Int           @id @default(autoincrement())
+
+  name                    String        
+
+  latitude                Decimal       
+  longitude               Decimal       
+
+
+  countryStateId          Int?          @map("country_state_id")
+  countryState            CountryState? @relation(fields: [countryStateId], references: [id])
+
+  countryId               Int?          @map("country_id")
+  country                 Country?      @relation(fields: [countryId], references: [id])
+  
+  profiles                UserProfile[]
+
+  @@index([countryStateId])
+  @@index([countryId])
+
+  @@map("cities")
+}

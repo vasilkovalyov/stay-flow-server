@@ -114,6 +114,10 @@ docker compose exec nestjs-api npx prisma db push // migrations database without
 
 docker compose exec nestjs-api npx prisma generate
 
-docker compose down
+docker compose down -v
 docker compose build --no-cache nestjs-api
 docker compose up -d
+
+npx prisma db seed
+
+docker compose exec nestjs-api npx prisma db seed
