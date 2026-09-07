@@ -1,10 +1,15 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { PrismaService } from '@/modules/prisma/prisma.service';
 import { EXCEPTION_MESSAGES } from './constants/exception-messages.constant';
 import { UserGetPayload, UserSelect } from '@generated/prisma/models';
 import { UpdateUserProfileDto } from '@/modules/user-profile/dto/update-user-profile.dto';
 import { UserProfileService } from '@/modules/user-profile/user-profile.service';
+import { UserMode } from '@generated/prisma/enums';
 
 type UserResponseProps<T extends UserSelect> = Promise<UserGetPayload<{
   select: T;
@@ -126,5 +131,41 @@ export class UserService {
 
   update(userId: number, dto: UpdateUserProfileDto) {
     return this.userProfileService.updateUserProfile(userId, dto);
+  }
+
+  async switchMode(userId: number) {
+    const user = await this.prismaService.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        id: true,
+        activeMode: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const activeMode =
+      user.activeMode === UserMode.GUEST ? UserMode.HOST : UserMode.GUEST;
+
+    const res = await this.prismaService.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        activeMode,
+      },
+      select: {
+        id: true,
+        activeMode: true,
+      },
+    });
+
+    return {
+      activeMode: res.activeMode,
+    };
   }
 }

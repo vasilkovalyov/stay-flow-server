@@ -1,7 +1,7 @@
 export const AUTH_ALGORITHM = 'HS256';
 export const HASH_TOKEN_ALGORITHM = 'sha256';
 
-export const JWT_ACCESS_TOKEN_COOKIE_TTL = 1;
+export const JWT_ACCESS_TOKEN_COOKIE_TTL = 15;
 export const JWT_REFRESH_TOKEN_COOKIE_TTL = 7;
 
 export const JWT_ACCESS_TOKEN_TTL = `${JWT_ACCESS_TOKEN_COOKIE_TTL}m`;

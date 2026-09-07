@@ -5,6 +5,7 @@ import {
   UseGuards,
   Delete,
   Body,
+  Put,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { AuthGuard } from '@/modules/security/guards/auth.guard';
@@ -29,6 +30,12 @@ export class UserController {
     @Body() dto: UpdateUserProfileDto,
   ) {
     return this.userService.update(user.id, dto);
+  }
+
+  @Put('switch-mode')
+  @UseGuards(AuthGuard)
+  switchMode(@CurrentAuthUser() user: JwtPayload) {
+    return this.userService.switchMode(user.id);
   }
 
   @Delete()
